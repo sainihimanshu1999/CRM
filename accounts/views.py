@@ -40,6 +40,9 @@ def registerPage(request):
 
             group = Group.objects.get(name = 'customer')
             user.groups.add(group)
+            Customer.objects.create(
+                user=user,
+            )
 
             messages.success(request, 'Account was created for '+username)
             return redirect('login')
@@ -53,9 +56,32 @@ def logoutUser(request):
     logout(request)
     return redirect('login')
 
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
 def userPage(request):
-    context = {}
+    orders = request.user.customer.order_set.all()
+
+    total_orders = orders.count()
+    delivered = orders.filter(status='Delivered').count()
+    pending = orders.filter(status='Pending').count()
+    print('o',orders)
+    context = {
+        'orders':orders,
+        'total_orders':total_orders,
+        'delivered':delivered,
+        'pending':pending
+    }
     return render(request, 'accounts/user.html',context)
+
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
+def accountSettings(request):
+    context = {}
+    return render(request, 'accounts/account_settings.html', context)
+
 
 @login_required(login_url='login')
 @admin_only
